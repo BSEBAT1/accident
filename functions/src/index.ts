@@ -18,8 +18,8 @@ admin.initializeApp();
 
 // query bottom={}&left={}&ma=500&mu=0&right={}&top={}
 export const fetchWaze = functions.pubsub
-  .topic("fetch-waze")
-  .onPublish(async (message) => {
+  .schedule("every 1 second")
+  .onRun(async () => {
     const boxes = await admin
       .firestore()
       .collection("waze-regions")
