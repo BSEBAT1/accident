@@ -3,7 +3,7 @@ import { WazeAlert } from "./locations";
 
 export async function notifyUser(
   userDoc: admin.firestore.DocumentReference,
-  device: { os: "ios" | "android"; token: string },
+  device: { os: "ios" | "android"; fcmToken: string },
   alert: WazeAlert
 ) {
   const title = `Accident Reported on ${alert.street}, ${alert.city}`;
@@ -11,6 +11,6 @@ export async function notifyUser(
     notification: {
       title,
     },
-    token: device.token,
+    token: device.fcmToken,
   });
 }

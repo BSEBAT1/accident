@@ -10,7 +10,7 @@ export async function testAndNotifyUser(userID: string, alert: WazeAlert) {
     const data = user.data() as any;
     const { point, radius } = data.subscription;
     if (distance(point, alert.location) <= radius) {
-      if (data.device && data.device.token) {
+      if (data.device && data.device.fcmToken) {
         await notifyUser(userDoc, data.device, alert);
       }
       const notifications: string[] = data.notifications || [];
