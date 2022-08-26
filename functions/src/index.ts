@@ -21,9 +21,10 @@ export const fetchWaze = functions.pubsub
   .schedule("* * * * *")
   .onRun(async () => {
     const tstart = Date.now();
-    while (Date.now() - tstart < 60000) {
+    while (Date.now() - tstart < 59000) {
       const t2 = Date.now();
       await _fetchWaze();
+      console.log("Executed Waze");
       if (Date.now() - t2 < 1000) {
         await delay(Date.now() - t2);
       }
