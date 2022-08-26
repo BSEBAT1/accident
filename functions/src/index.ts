@@ -4,6 +4,8 @@ import { getLocIDsforLocationSetting } from "./getLocIDsForLocationSetting";
 import { processAlerts } from "./processAlerts";
 import { BoundingBox, doWazeFetch } from "./scrape";
 import geolib from "geolib";
+import { compact, flatten } from "lodash";
+import { WazeAlert } from "./locations";
 admin.initializeApp();
 
 // // Start writing Firebase Functions
@@ -97,5 +99,43 @@ export const subscribeToLocation = functions.https.onCall(
         await primaryDoc.update({ ...primaryBox, boxes: data.boxes });
       }
     }
+  }
+);
+
+export const queryAlertsByLocation = functions.https.onCall(
+  async (data, context) => {
+    if (!context.auth) return [];
+    if (!data.location || !data.radius) return [];
+    const { limit = 5, offset = 0 } = data;
+    const { locIDs } = getLocIDsforLocationSetting(data.location, data.radius);
+    const fetched = flatten(
+      await Promise.all(
+        locIDs.map(async (locID) => {
+          const location = await admin
+            .firestore()
+            .collection("locations")
+            .doc(locID)
+            .get();
+          if (location.exists) {
+            const data: WazeAlert[] = await (location
+              .data()
+              ?.alerts?.slice(offset, offset + limit)
+              .map(async (alertID: string) => {
+                const alert = await admin
+                  .firestore()
+                  .collection("alerts")
+                  .doc(alertID)
+                  .get();
+                return alert.data() as WazeAlert;
+              }) ?? Promise.resolve([]));
+            return compact(data);
+          } else {
+            return [];
+          }
+        })
+      )
+    );
+    fetched.sort((a, b) => a.pubMillis - b.pubMillis);
+    return fetched;
   }
 );
