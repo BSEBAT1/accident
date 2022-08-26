@@ -5,17 +5,17 @@ import { WazeAlert } from "./locations";
 export async function notifyUser(
   userDoc: admin.firestore.DocumentReference,
   device: { os: "ios" | "android"; fcmToken: string },
-  alert: WazeAlert
+  accident: WazeAlert
 ) {
-  const title = `Accident Reported on ${alert.street}, ${alert.city}`;
+  const title = `Accident Reported on ${accident.street}, ${accident.city}`;
   await admin.messaging().send({
     notification: {
       title,
     },
     data: {
-      alertJSON: JSON.stringify(
+      accidentJSON: JSON.stringify(
         pick(
-          alert,
+          accident,
           "id",
           "location",
           "city",

@@ -40,7 +40,7 @@ export type WazeAlert = {
 
 ### subscribeToLocation
 
-Subscribes a user to alerts at a location. The user will receive push notifications for any accidents in the area if their FCM Token is stored at users.[uid].device.fcmToken
+Subscribes a user to accidents at a location. The user will receive push notifications for any accidents in the area if their FCM Token is stored at users.[uid].device.fcmToken
 
 Call with
 
@@ -79,7 +79,7 @@ functions
 Input data: `void`
 Response: `void`
 
-### queryAlertsByLocation
+### queryAccidentsByLocation
 
 Get accidents sorted by timestamp decending at any location
 
@@ -87,7 +87,7 @@ Call with
 
 ```kotlin
 functions
-        .getHttpsCallable("queryAlertsByLocation")
+        .getHttpsCallable("queryAccidentsByLocation")
         .call(data)
 ```
 
@@ -111,10 +111,10 @@ Response: `WazeAlert[]`
 
 ```ts
 type AccidentNotification = {
-  alertJSON: string;
+  accidentJSON: string;
 };
 
-type AlertJSON = Pick<
+type AccidentJSON = Pick<
   WazeAlert,
   | "id"
   | "location"
@@ -137,7 +137,7 @@ Store the user's FCM Token here
 firestore.collection("users");
 
 type User = {
-  notifications: string[]; // Alert ID's, most recent first
+  notifications: string[]; // Accident ID's, most recent first
   device?: {
     fcmToken: string;
     os: "ios" | "android";
@@ -146,14 +146,14 @@ type User = {
 };
 ```
 
-### Alerts
+### Accidents
 
 The accidents table
 
 ```ts
-firestore.collection("alerts");
+firestore.collection("accidents");
 
-type Alert = WazeAlert;
+type Accident = WazeAlert;
 ```
 
 ### Locations
@@ -165,7 +165,7 @@ firestore.collection("locations");
 
 type Location = {
   userIDs: string[]; // Users subscribed to this location
-  alerts: string[]; // Alerts at this location, most recent first
+  accidents: string[]; // Accidents at this location, most recent first
 };
 ```
 

@@ -35,6 +35,5 @@ export async function doWazeFetch(bb: BoundingBox): Promise<WazeAlert[]> {
     },
   });
   const json = res.data;
-  console.log(json);
   return json.alerts;
 }

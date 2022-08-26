@@ -147,14 +147,14 @@ export const subscribeToLocation = functions.https.onCall(
   }
 );
 
-type QueryAccidents = {
+export type QueryAccidents = {
   location: Point;
   radius: number;
   limit?: number;
   offset?: number;
 };
 
-export const queryAlertsByLocation = functions.https.onCall(
+export const queryAccidentsByLocation = functions.https.onCall(
   async (data, context) => {
     if (!context.auth) return [];
     if (!data.location || !data.radius) return [];
@@ -172,14 +172,14 @@ export const queryAlertsByLocation = functions.https.onCall(
           if (location.exists) {
             const data: WazeAlert[] = await (location
               .data()
-              ?.alerts?.slice(offset, offset + limit)
-              .map(async (alertID: string) => {
-                const alert = await admin
+              ?.accidents?.slice(offset, offset + limit)
+              .map(async (accidentID: string) => {
+                const accident = await admin
                   .firestore()
-                  .collection("alerts")
-                  .doc(alertID)
+                  .collection("accidents")
+                  .doc(accidentID)
                   .get();
-                return alert.data() as WazeAlert;
+                return accident.data() as WazeAlert;
               }) ?? Promise.resolve([]));
             return compact(data);
           } else {
