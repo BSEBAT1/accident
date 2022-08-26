@@ -1,6 +1,8 @@
 import { doWazeFetch } from "./src/scrape";
 import fs from "fs";
 import path from "path";
+// 40.57,-73.76
+// 40.58,-73.76
 doWazeFetch({
   topLeft: {
     // x: -73.7689888478918,

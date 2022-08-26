@@ -2,8 +2,8 @@ import axios from "axios";
 import { WazeAlert } from "./locations";
 
 export type Point = {
-  x: number;
-  y: number;
+  x: number; // latitude
+  y: number; // longitude
 };
 
 export type BoundingBox = {

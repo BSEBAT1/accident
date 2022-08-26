@@ -2,7 +2,7 @@ import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import { getLocIDsforLocationSetting } from "./getLocIDsForLocationSetting";
 import { processAlerts } from "./processAlerts";
-import { BoundingBox, doWazeFetch } from "./scrape";
+import { BoundingBox, doWazeFetch, Point } from "./scrape";
 import geolib from "geolib";
 import { compact, flatten } from "lodash";
 import { WazeAlert } from "./locations";
@@ -56,6 +56,34 @@ const _fetchWaze = async () => {
     })
   );
 };
+
+export const unsubscribeToLocation = functions.https.onCall(
+  async (data, context) => {
+    if (!context.auth) return;
+    const uid = context.auth.uid;
+    const userDoc = admin.firestore().collection("users").doc(uid);
+    const user = await userDoc.get();
+    const userData = user.data() as any;
+    if (userData.subscribedTo?.length) {
+      await Promise.all(
+        userData.subscribedTo.map(async (locID: string) => {
+          return admin
+            .firestore()
+            .collection("locations")
+            .doc(locID)
+            .update({ userIDs: admin.firestore.FieldValue.arrayRemove(uid) });
+        })
+      );
+      await userDoc.update({ subscribedTo: [] });
+    }
+  }
+);
+
+export type SubscribeToLocation = {
+  location: Point;
+  radius: number; // 5 - 50 mi
+};
+
 export const subscribeToLocation = functions.https.onCall(
   async (data, context) => {
     if (!context.auth) return;
@@ -63,7 +91,7 @@ export const subscribeToLocation = functions.https.onCall(
     const userDoc = admin.firestore().collection("users").doc(uid);
     const user = await userDoc.get();
     const userData = user.data() as any;
-    if (userData.subscribedTo) {
+    if (userData.subscribedTo?.length) {
       await Promise.all(
         userData.subscribedTo.map(async (locID: string) => {
           return admin
@@ -118,10 +146,18 @@ export const subscribeToLocation = functions.https.onCall(
   }
 );
 
+type QueryAccidents = {
+  location: Point;
+  radius: number;
+  limit?: number;
+  offset?: number;
+};
+
 export const queryAlertsByLocation = functions.https.onCall(
   async (data, context) => {
     if (!context.auth) return [];
     if (!data.location || !data.radius) return [];
+
     const { limit = 5, offset = 0 } = data;
     const { locIDs } = getLocIDsforLocationSetting(data.location, data.radius);
     const fetched = flatten(
