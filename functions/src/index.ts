@@ -18,28 +18,44 @@ admin.initializeApp();
 
 // query bottom={}&left={}&ma=500&mu=0&right={}&top={}
 export const fetchWaze = functions.pubsub
-  .schedule("every 1 second")
+  .schedule("* * * * *")
   .onRun(async () => {
-    const boxes = await admin
-      .firestore()
-      .collection("waze-regions")
-      .listDocuments();
-    await Promise.all(
-      boxes.map(async (boxRef) => {
-        const doc = await boxRef.get();
-        const box: BoundingBox = doc.data() as any;
-        if (box) {
-          try {
-            const alerts = await doWazeFetch(box);
-            await processAlerts(alerts);
-          } catch (err) {
-            console.error(err);
-          }
-        }
-      })
-    );
+    const tstart = Date.now();
+    while (Date.now() - tstart < 60000) {
+      const t2 = Date.now();
+      await _fetchWaze();
+      if (Date.now() - t2 < 1000) {
+        await delay(Date.now() - t2);
+      }
+    }
   });
 
+const delay = (time: number) => {
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, time);
+  });
+};
+
+const _fetchWaze = async () => {
+  const boxes = await admin
+    .firestore()
+    .collection("waze-regions")
+    .listDocuments();
+  await Promise.all(
+    boxes.map(async (boxRef) => {
+      const doc = await boxRef.get();
+      const box: BoundingBox = doc.data() as any;
+      if (box) {
+        try {
+          const alerts = await doWazeFetch(box);
+          await processAlerts(alerts);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    })
+  );
+};
 export const subscribeToLocation = functions.https.onCall(
   async (data, context) => {
     if (!context.auth) return;
