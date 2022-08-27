@@ -47,12 +47,9 @@ const _fetchWaze = async () => {
       const doc = await boxRef.get();
       const box: BoundingBox = doc.data() as any;
       if (box) {
-        try {
-          const alerts = await doWazeFetch(box);
-          await processAlerts(alerts);
-        } catch (err) {
-          console.error(err);
-        }
+        const alerts = await doWazeFetch(box);
+        if (!alerts) throw new Error("No data received from Waze");
+        await processAlerts(alerts);
       }
     })
   );
