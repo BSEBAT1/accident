@@ -65,7 +65,7 @@ export const unsubscribeToLocation = functions.https.onCall(
     const userDoc = admin.firestore().collection("users").doc(uid);
     const user = await userDoc.get();
     const userData = user.data() as any;
-    if (userData.subscribedTo?.length) {
+    if (userData?.subscribedTo?.length) {
       await Promise.all(
         userData.subscribedTo.map(async (locID: string) => {
           return admin
@@ -92,7 +92,7 @@ export const subscribeToLocation = functions.https.onCall(
     const userDoc = admin.firestore().collection("users").doc(uid);
     const user = await userDoc.get();
     const userData = user.data() as any;
-    if (userData.subscribedTo?.length) {
+    if (userData?.subscribedTo?.length) {
       await Promise.all(
         userData.subscribedTo.map(async (locID: string) => {
           return admin
