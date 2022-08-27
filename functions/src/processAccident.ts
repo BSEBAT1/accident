@@ -16,7 +16,7 @@ export async function processAccident(accident: WazeAlert) {
         location.data() as any;
       data.accidents.unshift(accident.uuid);
       await locationDoc.update({ accidents: data.accidents });
-      if (data.userIDs.length) {
+      if (data.userIDs?.length) {
         await Promise.all(
           data.userIDs.map((userID) => testAndNotifyUser(userID, accident))
         );
