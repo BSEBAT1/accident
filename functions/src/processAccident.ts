@@ -12,8 +12,9 @@ export async function processAccident(accident: WazeAlert) {
     const locationDoc = admin.firestore().collection("locations").doc(locID);
     const location = await locationDoc.get();
     if (location.exists) {
-      const data: { userIDs: string[]; accidents: string[] } =
+      const data: { userIDs?: string[]; accidents?: string[] } =
         location.data() as any;
+      data.accidents = data.accidents ?? [];
       data.accidents.unshift(accident.uuid);
       await locationDoc.set({ accidents: data.accidents }, { merge: true });
       if (data.userIDs?.length) {
