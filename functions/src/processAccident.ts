@@ -15,7 +15,7 @@ export async function processAccident(accident: WazeAlert) {
       const data: { userIDs: string[]; accidents: string[] } =
         location.data() as any;
       data.accidents.unshift(accident.uuid);
-      await locationDoc.update({ accidents: data.accidents });
+      await locationDoc.set({ accidents: data.accidents }, { merge: true });
       if (data.userIDs?.length) {
         await Promise.all(
           data.userIDs.map((userID) => testAndNotifyUser(userID, accident))

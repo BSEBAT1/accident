@@ -3,7 +3,7 @@ import * as functions from "firebase-functions";
 import { getLocIDsforLocationSetting } from "./getLocIDsForLocationSetting";
 import { processAlerts } from "./processAlerts";
 import { BoundingBox, doWazeFetch, Point } from "./scrape";
-import geolib from "geolib";
+import * as geolib from "geolib";
 import { compact, flatten } from "lodash";
 import { WazeAlert } from "./locations";
 admin.initializeApp();
@@ -69,11 +69,15 @@ export const unsubscribeToLocation = functions.https.onCall(
             .firestore()
             .collection("locations")
             .doc(locID)
-            .update({ userIDs: admin.firestore.FieldValue.arrayRemove(uid) });
+            .set(
+              { userIDs: admin.firestore.FieldValue.arrayRemove(uid) },
+              { merge: true }
+            );
         })
       );
-      await userDoc.update({ subscribedTo: [] });
+      await userDoc.set({ subscribedTo: [] }, { merge: true });
     }
+    await updatePrimary((doc) => delete doc.boxes[uid]);
   }
 );
 
@@ -96,7 +100,10 @@ export const subscribeToLocation = functions.https.onCall(
             .firestore()
             .collection("locations")
             .doc(locID)
-            .update({ userIDs: admin.firestore.FieldValue.arrayRemove(uid) });
+            .set(
+              { userIDs: admin.firestore.FieldValue.arrayRemove(uid) },
+              { merge: true }
+            );
         })
       );
     }
@@ -110,39 +117,45 @@ export const subscribeToLocation = functions.https.onCall(
           .firestore()
           .collection("locations")
           .doc(locID)
-          .update({ userIDs: admin.firestore.FieldValue.arrayUnion(uid) });
+          .set(
+            { userIDs: admin.firestore.FieldValue.arrayUnion(uid) },
+            { merge: true }
+          );
       })
     );
-    await userDoc.update({ subscribedTo: locIDs });
-    const primaryDoc = admin
-      .firestore()
-      .collection("waze-regions")
-      .doc("primary");
-    const primary = await primaryDoc.get();
-    if (!primary.exists) {
-      await primaryDoc.create({ ...box, boxes: { [uid]: box } });
-    } else {
-      const data = primary.data();
-      if (data) {
-        data.boxes[uid] = box;
-        const boxes: BoundingBox[] = Object.values(data.boxes);
-        const points: { latitude: number; longitude: number }[] = [];
-        boxes.forEach((box: BoundingBox) => {
-          points.push(
-            { latitude: box.topLeft.x, longitude: box.topLeft.y },
-            { latitude: box.bottomRight.x, longitude: box.bottomRight.y }
-          );
-        });
-        const bounds = geolib.getBounds(points);
-        const primaryBox = {
-          topLeft: { x: bounds.minLat, y: bounds.minLng },
-          bottomRight: { x: bounds.maxLat, y: bounds.maxLng },
-        };
-        await primaryDoc.update({ ...primaryBox, boxes: data.boxes });
-      }
-    }
+    await userDoc.set({ subscribedTo: locIDs }, { merge: true });
+    await updatePrimary((doc) => (doc.boxes[uid] = box));
   }
 );
+
+async function updatePrimary(updateDoc: (doc: any) => void) {
+  const primaryDoc = admin
+    .firestore()
+    .collection("waze-regions")
+    .doc("primary");
+  let primary = (await primaryDoc.get()).data();
+  if (!primary) {
+    primary = { boxes: {} };
+  }
+  updateDoc(primary);
+  const boxes: BoundingBox[] = Object.values(primary.boxes);
+  const points: { latitude: number; longitude: number }[] = [];
+  boxes.forEach((box: BoundingBox) => {
+    points.push(
+      { latitude: box.topLeft.x, longitude: box.topLeft.y },
+      { latitude: box.bottomRight.x, longitude: box.bottomRight.y }
+    );
+  });
+  const bounds = geolib.getBounds(points);
+  const primaryBox = {
+    topLeft: { x: bounds.minLat, y: bounds.minLng },
+    bottomRight: { x: bounds.maxLat, y: bounds.maxLng },
+  };
+  await primaryDoc.set(
+    { ...primaryBox, boxes: primary.boxes },
+    { merge: true }
+  );
+}
 
 export type QueryAccidents = {
   location: Point;

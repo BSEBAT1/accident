@@ -15,7 +15,7 @@ export async function testAndNotifyUser(userID: string, accident: WazeAlert) {
       }
       const notifications: string[] = data.notifications || [];
       notifications.unshift(accident.uuid);
-      await userDoc.update({ notifications });
+      await userDoc.set({ notifications }, { merge: true });
     }
   }
 }

@@ -1,3 +1,5 @@
+import { FIX, fixedCoord } from "./fixedCoord";
+
 export function getLocID(lat: number, lng: number) {
-  return `${lat.toFixed(2)},${lng.toFixed(2)}`;
+  return `${fixedCoord(lat).toFixed(FIX)},${fixedCoord(lng).toFixed(FIX)}`;
 }
