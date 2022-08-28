@@ -7,6 +7,7 @@ export async function processAccident(accident: WazeAlert) {
   const doc = admin.firestore().collection("accidents").doc(accident.uuid);
   const ref = await doc.get();
   if (!ref.exists) {
+    console.log("NEW ACCIDENT", accident);
     await doc.create(accident);
     const locID = getLocID(accident.location.y, accident.location.x);
     const locationDoc = admin.firestore().collection("locations").doc(locID);

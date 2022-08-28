@@ -8,6 +8,7 @@ export async function notifyUser(
   accident: WazeAlert
 ) {
   const title = `Accident Reported on ${accident.street}, ${accident.city}`;
+  console.log("Send Notification", device, accident);
   await admin.messaging().send({
     notification: {
       title,

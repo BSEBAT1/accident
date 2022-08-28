@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin";
 import { distance } from "./distance";
 import { WazeAlert } from "./locations";
+import { milesToMeters } from "./milesToMeters";
 import { notifyUser } from "./notifyUser";
 
 export async function testAndNotifyUser(userID: string, accident: WazeAlert) {
@@ -8,8 +9,8 @@ export async function testAndNotifyUser(userID: string, accident: WazeAlert) {
   const user = await userDoc.get();
   if (user.exists) {
     const data = user.data() as any;
-    const { point, radius } = data.subscription;
-    if (distance(point, accident.location) <= radius) {
+    const { location, radius } = data.locationSubscription;
+    if (distance(location, accident.location) <= milesToMeters(radius)) {
       if (data.device && data.device.fcmToken) {
         await notifyUser(userDoc, data.device, accident);
       }

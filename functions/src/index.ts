@@ -75,7 +75,13 @@ export const unsubscribeToLocation = functions.https.onCall(
             );
         })
       );
-      await userDoc.set({ subscribedTo: [] }, { merge: true });
+      await userDoc.set(
+        {
+          subscribedTo: admin.firestore.FieldValue.delete,
+          locationSubscription: admin.firestore.FieldValue.delete,
+        },
+        { merge: true }
+      );
     }
     await updatePrimary((doc) => delete doc.boxes[uid]);
   }
@@ -123,7 +129,10 @@ export const subscribeToLocation = functions.https.onCall(
           );
       })
     );
-    await userDoc.set({ subscribedTo: locIDs }, { merge: true });
+    await userDoc.set(
+      { subscribedTo: locIDs, locationSubscription: data },
+      { merge: true }
+    );
     await updatePrimary((doc) => (doc.boxes[uid] = box));
   }
 );
