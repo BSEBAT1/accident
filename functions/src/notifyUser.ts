@@ -1,19 +1,28 @@
 import * as admin from "firebase-admin";
 import { pick } from "lodash";
 import { WazeAlert } from "./locations";
+import { User } from "./user";
 
 export async function notifyUser(
   userDoc: admin.firestore.DocumentReference,
-  device: { os: "ios" | "android"; fcmToken: string },
+  user: User,
   accident: WazeAlert
 ) {
-  const title = `Accident Reported on ${accident.street}, ${accident.city}`;
+  const title = user.subscriptionValid
+    ? `Accident Reported on ${accident.street}, ${accident.city}`
+    : `Accident Reported`;
+  const device = user.device;
+  if (!device || !device.fcmToken) return;
   console.log("Send Notification", device, accident);
   await admin.messaging().send({
-    notification: {
-      title,
-    },
+    notification:
+      device.os === "android"
+        ? undefined
+        : {
+            title,
+          },
     data: {
+      title,
       accidentJSON: JSON.stringify(
         pick(
           accident,

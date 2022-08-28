@@ -6,6 +6,7 @@ import { BoundingBox, doWazeFetch, Point } from "./scrape";
 import * as geolib from "geolib";
 import { compact, flatten } from "lodash";
 import { WazeAlert } from "./locations";
+import { validateLocation } from "./validate";
 admin.initializeApp();
 
 // // Start writing Firebase Functions
@@ -77,8 +78,8 @@ export const unsubscribeToLocation = functions.https.onCall(
       );
       await userDoc.set(
         {
-          subscribedTo: admin.firestore.FieldValue.delete,
-          locationSubscription: admin.firestore.FieldValue.delete,
+          subscribedTo: admin.firestore.FieldValue.delete(),
+          locationSubscription: admin.firestore.FieldValue.delete(),
         },
         { merge: true }
       );
@@ -95,6 +96,7 @@ export type SubscribeToLocation = {
 export const subscribeToLocation = functions.https.onCall(
   async (data, context) => {
     if (!context.auth) return;
+    validateLocation(data.location);
     const uid = context.auth.uid;
     const userDoc = admin.firestore().collection("users").doc(uid);
     const user = await userDoc.get();
@@ -177,7 +179,7 @@ export const queryAccidentsByLocation = functions.https.onCall(
   async (data, context) => {
     if (!context.auth) return [];
     if (!data.location || !data.radius) return [];
-
+    validateLocation(data.location);
     const { limit = 5, offset = 0 } = data;
     const { locIDs } = getLocIDsforLocationSetting(data.location, data.radius);
     const fetched = flatten(
@@ -189,17 +191,22 @@ export const queryAccidentsByLocation = functions.https.onCall(
             .doc(locID)
             .get();
           if (location.exists) {
-            const data: WazeAlert[] = await (location
-              .data()
-              ?.accidents?.slice(offset, offset + limit)
-              .map(async (accidentID: string) => {
-                const accident = await admin
-                  .firestore()
-                  .collection("accidents")
-                  .doc(accidentID)
-                  .get();
-                return accident.data() as WazeAlert;
-              }) ?? Promise.resolve([]));
+            const data: WazeAlert[] = await Promise.all(
+              location
+                .data()
+                ?.accidents?.slice(
+                  Math.floor(offset / 2 / locIDs.length),
+                  offset + limit
+                )
+                .map(async (accidentID: string) => {
+                  const accident = await admin
+                    .firestore()
+                    .collection("accidents")
+                    .doc(accidentID)
+                    .get();
+                  return accident.data() as WazeAlert;
+                }) ?? []
+            );
             return compact(data);
           } else {
             return [];

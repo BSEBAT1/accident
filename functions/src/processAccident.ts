@@ -2,14 +2,22 @@ import * as admin from "firebase-admin";
 import { WazeAlert } from "./locations";
 import { testAndNotifyUser } from "./testAndNotifyUser";
 import { getLocID } from "./getLocID";
+import type { Point } from "./scrape";
+
+function swapLatLng(point: Point) {
+  const y = point.y;
+  point.y = point.x;
+  point.x = y;
+}
 
 export async function processAccident(accident: WazeAlert) {
   const doc = admin.firestore().collection("accidents").doc(accident.uuid);
   const ref = await doc.get();
   if (!ref.exists) {
     console.log("NEW ACCIDENT", accident);
+    swapLatLng(accident.location);
     await doc.create(accident);
-    const locID = getLocID(accident.location.y, accident.location.x);
+    const locID = getLocID(accident.location.x, accident.location.y);
     const locationDoc = admin.firestore().collection("locations").doc(locID);
     const location = await locationDoc.get();
     if (location.exists) {

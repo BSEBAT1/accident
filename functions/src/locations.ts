@@ -22,6 +22,9 @@ export type WazeAlert = {
   magvar: number;
   showFacebookPic: boolean;
   wazeData: string;
-  location: { x: number; y: number };
+  location: {
+    x: number; // LONGITUDE
+    y: number; // LATITUDE
+  };
   pubMillis: number;
 };
